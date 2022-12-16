@@ -6,7 +6,17 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import fr.alkanife.alkabot.Alkabot;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import org.apache.hc.core5.http.ParseException;
+import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
+import se.michaelthelin.spotify.model_objects.specification.Paging;
+import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+import se.michaelthelin.spotify.model_objects.specification.Track;
+import se.michaelthelin.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
+import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +91,68 @@ public class MusicLoader {
         });
     }
 
+    public static void loadSpotifyPlaylist(SlashCommandInteractionEvent slashCommandInteractionEvent, final String url, boolean priority) {
+        Alkabot.getLogger().info("LOAD ->> " + url + " - " + priority);
+
+        SpotifyApi spotifyApi = new SpotifyApi.Builder()
+                .setClientId(Alkabot.getConfig().getSpotify_client_id())
+                .setClientSecret(Alkabot.getConfig().getSpotify_client_secret())
+                .build();
+
+        // access token
+
+        String access = "";
+
+        ClientCredentialsRequest clientCredentialsRequest = spotifyApi.clientCredentials()
+                .build();
+
+        try {
+            final ClientCredentials clientCredentials = clientCredentialsRequest.execute();
+
+            access = clientCredentials.getAccessToken();
+
+            System.out.println(access);
+            System.out.println("Expires in: " + clientCredentials.getExpiresIn());
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            System.out.println("Error: " + e.getMessage());
+            slashCommandInteractionEvent.getHook().sendMessage("error clientCredentialsRequest").queue();
+        }
+        spotifyApi.setAccessToken(access);
+
+        // tracks playlists
+
+        String id = url.replaceAll("https://open.spotify.com/playlist/", "");
+
+        Alkabot.getLogger().info(id);
+
+        GetPlaylistsItemsRequest getPlaylistsItemsRequest = spotifyApi
+                .getPlaylistsItems(id)
+//          .fields("description")
+//          .limit(10)
+//          .offset(0)
+//          .market(CountryCode.SE)
+//          .additionalTypes("track,episode")
+                .build();
+
+        try {
+            final Paging<PlaylistTrack> playlistTrackPaging = getPlaylistsItemsRequest.execute();
+
+            List<AlkabotTrack> alkabotTrackList = new ArrayList<>();
+
+            for (PlaylistTrack playlistTrack : playlistTrackPaging.getItems()) {
+                Track track = (Track) playlistTrack.getTrack();
+                alkabotTrackList.add(new AlkabotTrack(track));
+            }
+
+            Alkabot.getTrackScheduler().queuePlaylist(alkabotTrackList.get(0), alkabotTrackList, priority);
+
+            slashCommandInteractionEvent.getHook().sendMessage("load OK (playlist spotify) --- " + alkabotTrackList.size() + " entrées").queue();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            System.out.println("Error: " + e.getMessage());
+            slashCommandInteractionEvent.getHook().sendMessage("error getPlaylistsItemsRequest").queue();
+        }
+    }
+
     // From the queue
     public static void play(AlkabotTrack alkabotTrack) {
         if (alkabotTrack == null) {
@@ -103,7 +175,23 @@ public class MusicLoader {
             }
 
             @Override
-            public void playlistLoaded(AudioPlaylist playlist) {}
+            public void playlistLoaded(AudioPlaylist playlist) {
+                // spotify, likely
+                playLoadRetrying = false;
+
+                AudioTrack firstTrack = playlist.getSelectedTrack();
+
+                if (firstTrack == null)
+                    firstTrack = playlist.getTracks().get(0);
+
+                if (alkabotTrack.getUrl().startsWith("ytsearch")) {
+                    Alkabot.getLogger().info("spotify track loaded - search yt ");
+
+                    Alkabot.getTrackScheduler().getPlayer().startTrack(firstTrack, false);
+
+                    Alkabot.getLastCommandChannel().sendMessage("playing `" + alkabotTrack.getUrl() + "` (recherche youtube)").queue();
+                }
+            }
 
             @Override
             public void noMatches() {
@@ -126,9 +214,4 @@ public class MusicLoader {
             }
         });
     }
-
-    public static void loadSpotifyPlaylist() {
-
-    }
-
 }

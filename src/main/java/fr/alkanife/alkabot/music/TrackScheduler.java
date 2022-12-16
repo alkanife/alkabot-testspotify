@@ -65,7 +65,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
             Alkabot.getLogger().info("Adding to queue except first");
             for (AlkabotTrack a : alkabotTrackList)
-                if (!a.getUrl().equals(firstTrack.getUrl()))
+                if (!a.getIdentifier().equals(firstTrack.getIdentifier()))
                     newQueue.offer(a);
         } else {
             Alkabot.getLogger().info("Adding everything to queue");

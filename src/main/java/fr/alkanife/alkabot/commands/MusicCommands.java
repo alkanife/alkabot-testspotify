@@ -33,6 +33,13 @@ public class MusicCommands {
 
                 String url = slashCommandEvent.getOption("input").getAsString();
 
+                // spotify
+                if (url.toLowerCase().startsWith("https://open.spotify.com/playlist")) {
+                    Alkabot.getLogger().info("spotify playlist detected");
+                    MusicLoader.loadSpotifyPlaylist(slashCommandEvent, url, false);
+                    return;
+                }
+
                 if (!Alkabot.isURL(url))
                     url = "ytsearch: " + url;
 
@@ -44,6 +51,13 @@ public class MusicCommands {
                 Music.connect(slashCommandEvent.getMember());
 
                 String url = slashCommandEvent.getOption("input").getAsString();
+
+                // spotify
+                if (url.toLowerCase().startsWith("https://open.spotify.com/playlist")) {
+                    Alkabot.getLogger().info("spotify playlist detected");
+                    MusicLoader.loadSpotifyPlaylist(slashCommandEvent, url, true);
+                    return;
+                }
 
                 if (!Alkabot.isURL(url))
                     url = "ytsearch: " + url;

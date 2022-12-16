@@ -5,14 +5,18 @@ import java.util.List;
 public class Configuration {
 
     private String token;
+    private String spotify_client_id;
+    private String spotify_client_secret;
     private List<String> administrators_id;
     private String guild_id;
     private Presence presence;
 
     public Configuration() {}
 
-    public Configuration(String token, List<String> administrators_id, String guild_id, Presence presence) {
+    public Configuration(String token, String spotify_client_id, String spotify_client_secret, List<String> administrators_id, String guild_id, Presence presence) {
         this.token = token;
+        this.spotify_client_id = spotify_client_id;
+        this.spotify_client_secret = spotify_client_secret;
         this.administrators_id = administrators_id;
         this.guild_id = guild_id;
         this.presence = presence;
@@ -20,6 +24,14 @@ public class Configuration {
 
     public String getToken() {
         return token;
+    }
+
+    public String getSpotify_client_id() {
+        return spotify_client_id;
+    }
+
+    public String getSpotify_client_secret() {
+        return spotify_client_secret;
     }
 
     public List<String> getAdministrators_id() {

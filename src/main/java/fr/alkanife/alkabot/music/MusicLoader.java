@@ -125,6 +125,8 @@ public class MusicLoader {
 
         Alkabot.getLogger().info(id);
 
+        Alkabot.getLogger().info("try");
+
         GetPlaylistsItemsRequest getPlaylistsItemsRequest = spotifyApi
                 .getPlaylistsItems(id)
 //          .fields("description")
@@ -133,22 +135,30 @@ public class MusicLoader {
 //          .market(CountryCode.SE)
 //          .additionalTypes("track,episode")
                 .build();
+        Alkabot.getLogger().info("done");
 
         try {
+            Alkabot.getLogger().info("try");
             final Paging<PlaylistTrack> playlistTrackPaging = getPlaylistsItemsRequest.execute();
+            Alkabot.getLogger().info("playlistTrackPaging");
 
             List<AlkabotTrack> alkabotTrackList = new ArrayList<>();
+            Alkabot.getLogger().info("alkabotTrackList");
 
             for (PlaylistTrack playlistTrack : playlistTrackPaging.getItems()) {
                 Track track = (Track) playlistTrack.getTrack();
-                alkabotTrackList.add(new AlkabotTrack(track));
+                if (track != null) // nullPointer sur certaines playlists
+                    alkabotTrackList.add(new AlkabotTrack(track));
             }
+            Alkabot.getLogger().info("for pass");
 
+            Alkabot.getLogger().info("queuing");
             Alkabot.getTrackScheduler().queuePlaylist(alkabotTrackList.get(0), alkabotTrackList, priority);
 
+            Alkabot.getLogger().info("done");
             slashCommandInteractionEvent.getHook().sendMessage("load OK (playlist spotify) --- " + alkabotTrackList.size() + " entrées").queue();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
             slashCommandInteractionEvent.getHook().sendMessage("error getPlaylistsItemsRequest").queue();
         }
     }

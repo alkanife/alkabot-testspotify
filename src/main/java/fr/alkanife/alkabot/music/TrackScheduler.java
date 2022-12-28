@@ -54,6 +54,8 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void queuePlaylist(AlkabotTrack firstTrack, List<AlkabotTrack> alkabotTrackList, boolean priority) {
+        Alkabot.getLogger().info("queing playlist");
+
         BlockingQueue<AlkabotTrack> newQueue = new LinkedBlockingQueue<>();
 
         if (!priority)
@@ -88,14 +90,15 @@ public class TrackScheduler extends AudioEventAdapter {
 
         if (endReason.equals(AudioTrackEndReason.LOAD_FAILED)) {
             Alkabot.getLogger().info("exception onTrackEnd");
-            if (retrying) {
+            /*if (retrying) {
                 retrying = false;
             } else {
                 Alkabot.getLogger().info("retrying");
                 retrying = true;
                 MusicLoader.play(new AlkabotTrack(track));
                 return;
-            }
+            }*/
+            return;
         }
 
         if (endReason.mayStartNext) {
@@ -113,10 +116,14 @@ public class TrackScheduler extends AudioEventAdapter {
             Alkabot.getLogger().info("retrying");
             retrying = true;
             MusicLoader.play(new AlkabotTrack(track));
-            //return;
         }
 
         // say
+    }
+
+    @Override
+    public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        Alkabot.getLogger().info("start track " + track.getInfo().title);
     }
 
     public BlockingQueue<AlkabotTrack> getQueue() {
